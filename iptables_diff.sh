@@ -39,11 +39,13 @@ done
 [ -n "$from" ] || { echo "No FROM chain specified" ; exit 1; }
 [ -n "$to" ] || { echo "No TO chain specified" ; exit 1; }
 
-cp $from $from.new
+temp=$(mktemp)
+cp $from $temp
 
 {
 	diff --ed $from $to
 	echo w
-} | ed -s $from.new
+} | ed -s $temp
 
-cat $from $from.new | uniq -u
+cat $from $temp | uniq -u
+rm $temp

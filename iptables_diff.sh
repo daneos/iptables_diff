@@ -46,4 +46,4 @@ cp $from $from.new
 	echo w
 } | ed -s $from.new
 
-cat $from $from.new | uniq
+cat $from $from.new | uniq -u

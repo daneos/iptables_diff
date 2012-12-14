@@ -39,13 +39,14 @@ done
 [ -n "$from" ] || { echo "No FROM chain specified" ; exit 1; }
 [ -n "$to" ] || { echo "No TO chain specified" ; exit 1; }
 
-temp=$(mktemp)
-cp $from $temp
-
-{
-	diff --ed $from $to
-	echo w
-} | ed -s $temp
-
-cat $from $temp | uniq -u
-rm $temp
+# --- not sure if working --- #
+diff --suppress-common-lines -d $from $to | while read line
+do
+	if [ "$(echo $line | cut -d' ' -f1)" == "<" ]; then
+		if [ "$(echo $line | cut -d' ' -f2)" != "-P" ]; then
+			echo $line | sed -e 's/-A /-D /' -e 's/[<>]/iptables/'
+		fi
+	elif [ "$(echo $line | cut -d' ' -f1)" == ">" ]; then
+		echo $line | sed -e 's/[<>]/iptables/'
+	fi
+done

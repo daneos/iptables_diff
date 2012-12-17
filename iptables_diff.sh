@@ -51,6 +51,10 @@ done
 	# fi
 # done
 
+if ! [ -t 1 ]; then
+	echo $(head -1 $0)
+fi
+
 numln=$(cat $from | wc -l)
 cat $to | while read line
 do
@@ -82,3 +86,7 @@ do
 	echo "iptables -D $(echo $line | cut -d' ' -f2) $i"
 	(( i++ ))
 done
+
+if ! [ -t 1 ]; then
+	chmod +x /proc/$$/fd/1
+fi

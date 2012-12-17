@@ -52,19 +52,23 @@ done
 # done
 
 numln=$(cat $from | wc -l)
-
 cat $to | while read line
 do
 	if [ "$(echo $line | grep -e '-j' -e '--jump' -e '-g' -e '--goto')" ]
 	then
-		echo "# --- jump or goto detected, make sure that target exists --- #"
-		echo "iptables $line"
-		echo "# ----------------------------------------------------------- #"
-		if ! [ -t 1 ]; then
-			echo "Jump or goto in TO chain, make sure that target exists" >&2
-			echo ">> $line" >&2
+		if [ "$(echo $line | grep -e 'ACCEPT' -e 'DNAT' -e 'DROP' -e 'LOG' -e 'MARK' -e 'MASQUERADE' -e 'MIRROR' -e 'QUEUE' -e 'REDIRECT' -e 'REJECT' -e 'RETURN' -e 'SNAT' -e 'TOS' -e 'TTL' -e 'ULOG')" ]; then
+			echo "iptables $line"
+			continue
+		else
+			echo "# --- jump or goto detected, make sure that target exists --- #"
+			echo "iptables $line"
+			echo "# ----------------------------------------------------------- #"
+			if ! [ -t 1 ]; then
+				echo "Jump or goto in TO chain, make sure that target exists" >&2
+				echo ">> $line" >&2
+			fi
+			continue
 		fi
-		continue
 	fi
 	echo "iptables $line"
 done

@@ -8,7 +8,7 @@ Options:
 -f FROM chain (file)
 -t TO chain (file)
 -d destination script (file)
--T generate test (only with -d)
+-T generate test
 -h Prints this help message
 Example: $0 -f ipt_from -t /root/ipt -d setipt.sh -T 
 EOF

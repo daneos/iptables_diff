@@ -3,7 +3,7 @@
 function usage() {
 	cat << EOF
 Usage: $0 <OPTIONS>
-Prints iptables commands f-o change from chain FROM to TO
+Prints iptables commands for change from chain FROM to TO
 Options:
 -f FROM chain (file)
 -t TO chain (file)
@@ -55,19 +55,17 @@ numln=$(cat $from | wc -l)
 
 cat $to | while read line
 do
-	# if [ $(echo $line | grep -F -e '-j\
-# --jump\
-# -g\
-# --goto') ]
-	# then
-		# echo "# --- jump or goto detected, make sure that target exists --- #"
-		# echo "iptables $line"
-		# echo "# ----------------------------------------------------------- #"
-	# fi
-	echo $(echo $line | grep -F -e '-j\
---jump\
--g\
---goto')
+	if [ "$(echo $line | grep -e '-j' -e '--jump' -e '-g' -e '--goto')" ]
+	then
+		echo "# --- jump or goto detected, make sure that target exists --- #"
+		echo "iptables $line"
+		echo "# ----------------------------------------------------------- #"
+		if ! [ -t 1 ]; then
+			echo "Jump or goto in TO chain, make sure that target exists" >&2
+			echo ">> $line" >&2
+		fi
+		continue
+	fi
 	echo "iptables $line"
 done
 

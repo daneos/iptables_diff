@@ -7,12 +7,14 @@ Prints iptables commands for change from chain FROM to TO
 Options:
 -f FROM chain (file)
 -t TO chain (file)
+-d destination script (file)
+-T generate test (only with -d)
 -h Prints this help message
-Example: $0 -f ipt_from -t /root/ipt 
+Example: $0 -f ipt_from -t /root/ipt -d setipt.sh -T 
 EOF
 }
 
-while getopts "hf:t:" OPTION; do
+while getopts "hTf:t:d:" OPTION; do
 	case $OPTION in
 	h)
 		usage
@@ -23,6 +25,12 @@ while getopts "hf:t:" OPTION; do
 		;;
 	t)
 		to="$OPTARG"
+		;;
+	d)
+		dest="$OPTARG"
+		;;
+	T)
+		gentest=1
 		;;
 	*)
 		echo "Invalid option"
@@ -38,6 +46,7 @@ done
 
 [ -n "$from" ] || { echo "No FROM chain specified"; usage; exit 1; }
 [ -n "$to" ] || { echo "No TO chain specified"; usage; exit 1; }
+[ -n "$dest" ] || { echo "No destination specified"; usage; exit 1; }
 
 # --- not sure if troll or working --- #
 # diff --suppress-common-lines -d $from $to | while read line
@@ -51,13 +60,14 @@ done
 	# fi
 # done
 
-if ! [ -t 1 ]; then
-	testf="$(ls -l /proc/$$/fd/1 | cut -d' ' -f10).test"
-	echo $(head -1 $0)
-	echo $(head -1 $0) > $testf
-	echo "set -e" >> $testf
-	echo "chain=DIFFTEMPTEST" >> $testf
-	echo "trap 'iptables -X \$chain; echo -e \"\e[1;31mAn error occured, could not add all rules to chain. Maybe some jump/goto targets do not exist?\e[00m\"' EXIT" >> $testf
+echo $(head -1 $0) > $dest
+destf=$(mktemp)
+
+if [ "$gentest" ]; then
+	testf=$(mktemp)
+	echo "set -e" > $testf
+	echo "chain=DIFFTMP\$RANDOM" >> $testf
+	echo "trap 'iptables -X \$chain; echo -e \"\e[1;31mAn error occured, could not add all rules to test chain. Maybe some jump/goto targets do not exist?\e[00m\"' EXIT" >> $testf
 	echo "iptables -N \$chain" >> $testf
 fi
 
@@ -102,23 +112,24 @@ TPROXY
 TRACE
 TTL
 ULOG')" ]; then
-			echo "iptables $line"
+			echo "iptables $line" >> $destf
 			continue
 		else
-			echo "# --- jump or goto detected, make sure that target exists --- #"
-			echo "iptables $line"
-			echo "# ----------------------------------------------------------- #"
-			if ! [ -t 1 ]; then
-				echo "Jump or goto in TO chain, make sure that target exists" >&2
-				echo ">> $line" >&2
+			echo "# --- jump or goto detected, make sure that target exists --- #" >> $destf
+			echo "iptables $line" >> $destf
+			if [ "$gentest" ]; then
+				echo "iptables $(echo $line | sed -e '/^-./ s/ [A-Za-z]* / \$chain /')" >> $testf
 			fi
+			echo "# ----------------------------------------------------------- #" >> $destf
+			echo "Jump or goto in TO chain, make sure that target exists"
+			echo ">> $line"
 			continue
 		fi
 	fi
-	if ! [ -t 1 ]; then
+	if [ "$gentest" ]; then
 		echo "iptables $(echo $line | sed -e '/^-./ s/ [A-Za-z]* / \$chain /')" >> $testf
 	fi
-	echo "iptables $line"
+	echo "iptables $line" >> $destf
 done
 
 numln=$(cat $from | wc -l)
@@ -127,13 +138,18 @@ do
 	if [ "$numln" == "0" ]; then
 		exit 0
 	fi
-	echo "iptables -D $(echo $line | cut -d' ' -f2) $numln"
+	echo "iptables -D $(echo $line | cut -d' ' -f2) $numln"  >> $destf
 	(( numln-- ))
 done
 
-if ! [ -t 1 ]; then
+if [ "$gentest" ]; then
 	echo "iptables -X \$chain" >> $testf
+	echo "set +e" >> $testf
 	echo "trap - EXIT" >> $testf
-	chmod +x /proc/$$/fd/1
-	chmod +x $testf
+	cat $testf >> $dest
+	rm $testf
 fi
+
+cat $destf >> $dest
+rm $destf
+chmod +x $dest

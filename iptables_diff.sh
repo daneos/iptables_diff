@@ -60,7 +60,43 @@ cat $to | while read line
 do
 	if [ "$(echo $line | grep -e '-j' -e '--jump' -e '-g' -e '--goto')" ]
 	then
-		if [ "$(echo $line | grep -e 'ACCEPT' -e 'DNAT' -e 'DROP' -e 'LOG' -e 'MARK' -e 'MASQUERADE' -e 'MIRROR' -e 'QUEUE' -e 'REDIRECT' -e 'REJECT' -e 'RETURN' -e 'SNAT' -e 'TOS' -e 'TTL' -e 'ULOG')" ]; then
+		if [ "$(echo $line | grep -F -e 'ACCEPT
+CHECKSUM
+CLASSIFY
+CLUSTERIP
+CONNMARK
+CONNSECMARK
+CT
+DNAT
+DROP
+DSCP
+ECN
+IDLETIMER
+IMQ
+LOG
+MARK
+MASQUERADE
+MIRROR
+NETMAP
+NFLOG
+NFQUEUE
+NOTRACK
+RATEEST
+REDIRECT
+REJECT
+SAME
+SECMARK
+SET
+SNAT
+TARPIT
+TCPMSS
+TCPOPTSTRIP
+TEE
+TOS
+TPROXY
+TRACE
+TTL
+ULOG')" ]; then
 			echo "iptables $line"
 			continue
 		else

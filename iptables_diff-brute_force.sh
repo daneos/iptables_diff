@@ -73,59 +73,6 @@ fi
 
 cat $to | while read line
 do
-	if [ "$(echo $line | grep -e '-j' -e '--jump' -e '-g' -e '--goto')" ]
-	then
-		if [ "$(echo $line | grep -F -e 'ACCEPT
-CHECKSUM
-CLASSIFY
-CLUSTERIP
-CONNMARK
-CONNSECMARK
-CT
-DNAT
-DROP
-DSCP
-ECN
-IDLETIMER
-IMQ
-LOG
-MARK
-MASQUERADE
-MIRROR
-NETMAP
-NFLOG
-NFQUEUE
-NOTRACK
-RATEEST
-REDIRECT
-REJECT
-SAME
-SECMARK
-SET
-SNAT
-TARPIT
-TCPMSS
-TCPOPTSTRIP
-TEE
-TOS
-TPROXY
-TRACE
-TTL
-ULOG')" ]; then
-			echo "iptables $line" >> $destf
-			continue
-		else
-			echo "# --- jump or goto detected, make sure that target exists --- #" >> $destf
-			echo "iptables $line" >> $destf
-			if [ "$gentest" ]; then
-				echo "iptables $(echo $line | sed -e '/^-./ s/ [A-Za-z]* / \$chain /')" >> $testf
-			fi
-			echo "# ----------------------------------------------------------- #" >> $destf
-			echo "Jump or goto in TO chain, make sure that target exists"
-			echo ">> $line"
-			continue
-		fi
-	fi
 	if [ "$gentest" ]; then
 		echo "iptables $(echo $line | sed -e '/^-./ s/ [A-Za-z]* / \$chain /')" >> $testf
 	fi

@@ -52,10 +52,15 @@ done
 # done
 
 if ! [ -t 1 ]; then
+	testf="$(ls -l /proc/$$/fd/1 | cut -d' ' -f10).test"
 	echo $(head -1 $0)
+	echo $(head -1 $0) > $testf
+	echo "set -e" >> $testf
+	echo "chain=DIFFTEMPTEST" >> $testf
+	echo "trap 'iptables -X \$chain; echo -e \"\e[1;31mAn error occured, could not add all rules to chain. Maybe some jump/goto targets do not exist?\e[00m\"' EXIT" >> $testf
+	echo "iptables -N \$chain" >> $testf
 fi
 
-numln=$(cat $from | wc -l)
 cat $to | while read line
 do
 	if [ "$(echo $line | grep -e '-j' -e '--jump' -e '-g' -e '--goto')" ]
@@ -110,19 +115,25 @@ ULOG')" ]; then
 			continue
 		fi
 	fi
+	if ! [ -t 1 ]; then
+		echo "iptables $(echo $line | sed -e '/^-./ s/ [A-Za-z]* / \$chain /')" >> $testf
+	fi
 	echo "iptables $line"
 done
 
-i=1
+numln=$(cat $from | wc -l)
 cat $from | while read line
 do
-	if [ "$i" -gt "$numln" ]; then
+	if [ "$numln" == "0" ]; then
 		exit 0
 	fi
-	echo "iptables -D $(echo $line | cut -d' ' -f2) $i"
-	(( i++ ))
+	echo "iptables -D $(echo $line | cut -d' ' -f2) $numln"
+	(( numln-- ))
 done
 
 if ! [ -t 1 ]; then
+	echo "iptables -X \$chain" >> $testf
+	echo "trap - EXIT" >> $testf
 	chmod +x /proc/$$/fd/1
+	chmod +x $testf
 fi

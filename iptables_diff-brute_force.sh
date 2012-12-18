@@ -71,9 +71,7 @@ function genscript()
 	numln=$(wc -l < $from)
 	while read line
 	do
-		if [ "$numln" == "0" ]; then
-			exit 0
-		fi
+		[ "$numln" != "0" ] || { exit 0; }
 		chain=$(echo $line | cut -d' ' -f2)
 		echo "iptables -D $chain $numln"
 		(( numln-- ))

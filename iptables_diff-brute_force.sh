@@ -34,7 +34,7 @@ while getopts "hTf:t:d:" OPTION; do
 		gentest=1
 		;;
 	*)
-		echo "Invalid option"
+		echo "Unrecognized option."
 		usage
 		exit 1;
 		;;

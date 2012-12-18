@@ -79,8 +79,6 @@ function genscript()
 }
 
 head -1 $0 > $dest
-if [ "$gentest" ]; then
-	gentestcode >> $dest
-fi
+! [ "$gentest" ] || { gentestcode >> $dest; }
 genscript >> $dest
 chmod +x $dest
